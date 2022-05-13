@@ -1,0 +1,103 @@
+
+페이징 처리
+페이징 처리를 하려면 sql을 변경 필요
+페이지번호(pageNum), 한 페이지 당 몇개의 데이터를 보여줄지(amount) 
+-> 클래스로 관리
+(pageNum-1)*amount
+
+<![CDATA[SQL구문]]>
+SQL 구문 안에 특수 문자가 들어갈 경우 XML 파일에서 잘못 인식하는 경우를 막기 위해 사용하는 처리방법(Character Data 줄임말) sql 구문안에 부등호 같은 특수문자가 들어갈 때 사용
+xml 태그만들때 
+
+화면 밑에 페이지 번호를 표시, 페이지 번호를 클릭할 수 있도록
+< 1 2 3 4 5 >
+
+페이지 처리할 때 필요한 정보들
+현재 페이지 번호(pageNum)
+이전과 다음으로 이동 가능한 링크(prev, next)
+화면에서 보여지는 페이지의 시작, 마지막(start, end)
+
+사용자가 5 페이지를 보고 있다 -> 1 ~ 10 페이지 /start 1 , end 10
+사용자가 19 페이지를 보고 있다 -> 11 ~ 20페이지 / start 11, end 20
+페이지 끝번호 계산
+end : (int)Math.ceil(현재 페이지 번호 / 10.0)*10)
+start : end - 9
+end는 전체 데이터 수(total)의 영향을 받는다
+진짜 끝번호를 realend라고 하면
+realend : Math.ceil((total*1.0)/amount(페이지 당 개수))
+realend < end
+-> 페이지 끝번호를 realend로 쓴다
+
+이전페이지 / 다음 페이지
+이전페이지 : 현재 페이지 - 1(시작 페이지 번호가 1보다 큰 경우)
+다음 페이지 : 현재 페이지 + 1(현재 페이지가 realend보다 작을 경우)
+
+검색 기능
+제목 / 내용 / 작성자
+
+검색결과가 여러개가 나올 수 있다
+여러개가 나올 시 -> 페이지 처리 필요
+제목 + 내용
+
+검색조건이 상황에 따라 다르다
+사용자가 제목 검색을 한 경우 where title like '%키워드%'
+사용자가 제목 검색을 한 경우 where content like '%키워드%'
+사용자가 제목+ 내용을 검색을 한 경우
+
+Mybatis의 동적 sql (jstl 태그와 비슷함)
+if, choose, trim, foreach
+if는 test라는 속성과 함께 특정한 조건이 true가 되었을 때
+포함된 sql을 사용하고자 할 때 작성한다
+
+단일 항목으로 제목 검색을 하는 상황 / 내용 / 작성자
+검색 조건이 T면 제목 검색을 할것이다
+검색 조건이 C면 내용 검색을 할 것이다
+검색 조건이 W면 작성자 검색을 할 것이다
+<if test="type == 'T'.tostring();">
+	(title like '%'||#{keword}||'%'
+</if>
+<if test="type == 'C'.tostring();">
+	(title like '%'||#{keword}||'%'
+</if>
+
+choose는 여러 상황들 중 하나의 상황에서만 동작한다 if-else, jstl의 <choose>
+<when test="type == 'T'.toString()">
+(title like '%'||#{keyword||'%')
+</when>
+<when test="type == 'C'.toString()">
+(title like '%'||#{keyword||'%')
+</when>
+<otherwise>
+위에서 아무 조건도 해당하지 않을 때
+</otherwise>
+</choose>
+
+sql 작성을 하는데 bno라는 값이 null이 아니면 where 절을 추가해서 bno 값을 비교하고 싶다
+select * from tbl_board
+<where>
+ <if test="bno != null"
+ 	bno = #{bno}
+ 	</if>
+ 	</where>
+ 	태그 안쪽 sql문이 생성되면 앞에 where 구문이 붙고, 그렇지 않으면 생성되지 않는다
+ 	bno 값이 존재하는 경우 : select * from tbl_board where bno = xxx;
+ 	bno 값이 null인 경우 : select * from tbl_board
+ 	
+ 	where절 안에 and나 or로 조건을 추가하고 싶을 경우
+ 	<trim> 태그
+ 	
+ 	<trimm prefix="and">
+ 	rownum <= 10
+ 	</trim>
+ 	
+ 	and rownum <= 10
+ 	prefix ,suffix, 속성 사용 가능
+ 	
+ 	<foreach> list, 배열, 맵 등을 이용해서 반복 처리할 때 사용하는 태그
+ 	</foreach>
+ 	
+ 	getListWithPage -> 검색 결과 리스트
+ 	(검색 조건이 없는 경우는 1페이지 씩 가져온다)
+ 	(검색 조건이 있는 경우 페이지수 계산을 해야한다 -> 이때 페이지수는 총페이지 수가 아닌 검색 결과에 대한 페이지 수를 계산해야한다)
+ 	
+ 	
